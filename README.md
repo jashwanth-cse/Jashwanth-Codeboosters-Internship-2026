@@ -1,190 +1,217 @@
-# Day 1 — Student Reference Guide
-## Introduction to Data Engineering + GitHub
-### Codeboosters Tech — Data Engineering + GenAI Internship Program
+# Day 2 — Student Reference Guide
+## Database Fundamentals + SQL + Data Visualization
+### Codeboosters Tech — Data Engineering + GenAI Internship
 
 ---
 
-## Quick Reference Card
-
-| Topic | Key Point |
-|-------|-----------|
-| Data Engineering | Building systems to collect, store, clean, and deliver data |
-| Structured Data | Rows and columns — CSV, Excel, SQL |
-| Semi-Structured | Key-value pairs — JSON, XML |
-| Unstructured | No fixed format — images, videos, audio, PDFs |
-| Pandas | Python library for working with tabular data |
-| DataFrame | In-memory table with rows and columns |
-| GitHub | Cloud platform for version control and code portfolio |
-| Commit | Saved snapshot of code with a description |
+## Continuity from Day 1
+The `student_performance.csv` from Day 1 is **loaded into a real SQLite database** today.
+Pipeline: `CSV → SQLite DB → SQL Queries → DataFrames → Charts`
 
 ---
 
-## Essential Pandas Commands — Day 1
+## Database Quick Concepts
+
+| Term | Meaning | Example |
+|------|---------|---------|
+| **Database** | Organized storage for structured data | `college.db` |
+| **Table** | Rows and columns inside a database | `students` table |
+| **Row / Record** | One complete entry | One student's data |
+| **Column / Field** | One attribute per record | `math_score` |
+| **Primary Key** | Unique ID for each row — cannot repeat | `student_id` |
+| **Foreign Key** | Column linking to another table's PK | `dept_code` |
+| **SQL** | Language to query databases | `SELECT * FROM students` |
+| **SQLite** | Lightweight DB stored in one file | `college.db` |
+
+---
+
+## Python Database Setup — Essential Code
 
 ```python
-import pandas as pd                    # Import Pandas library
+import sqlite3
+import pandas as pd
+import matplotlib.pyplot as plt
 
-df = pd.read_csv('filename.csv')       # Load a CSV file
+# 1. Connect to (or create) database
+conn = sqlite3.connect('college.db')
+cursor = conn.cursor()
 
-df.head()                              # Show first 5 rows
-df.head(10)                            # Show first 10 rows
-df.tail()                              # Show last 5 rows
+# 2. Load CSV into database table
+df = pd.read_csv('student_performance.csv')
+df.to_sql('students', conn, if_exists='replace', index=False)
 
-df.shape                               # (number_of_rows, number_of_columns)
-df.dtypes                              # Data type of each column
-df.describe()                          # Statistical summary
-df.isnull().sum()                      # Count missing values per column
-df.columns.tolist()                    # List all column names
+# 3. Run SQL → get DataFrame
+result = pd.read_sql_query("SELECT * FROM students LIMIT 5", conn)
 
-df['column_name']                      # Select one column
-
-# Boolean Filtering
-df[df['column'] == 'value']            # Filter rows equal to value
-df[df['column'] > 80]                  # Filter rows greater than 80
-df[df['column'] < 75]                  # Filter rows less than 75
-
-# Groupby and Aggregation
-df.groupby('column')['other'].mean()   # Average per group
-df['column'].value_counts()            # Count each unique value
-
-# Sorting
-df.sort_values(by='column', ascending=False)   # Sort highest first
-df.sort_values(by='column', ascending=True)    # Sort lowest first
-
-# New Column
-df['new_col'] = df['col1'] + df['col2']  # Add columns together
-
-# Save DataFrame
-df.to_csv('output.csv', index=False)   # Save as CSV
+# 4. Close when done
+conn.close()
 ```
 
 ---
 
-## Types of Data — Summary
+## SQL Cheat Sheet
 
-### Structured Data
-- Organized in rows and columns
-- Every record has the same fields
-- Examples: marksheet, bank transactions, attendance register
-- Formats: CSV, Excel (.xlsx), SQL Database
+```sql
+-- Basic SELECT
+SELECT name, math_score FROM students;
+SELECT * FROM students;                        -- all columns
+SELECT * FROM students LIMIT 10;              -- first 10 rows
 
-### Semi-Structured Data
-- Has labels/tags but not in strict rows and columns
-- Can have nested data (data inside data)
-- Examples: API responses, WhatsApp message metadata, config files
-- Formats: JSON, XML
+-- Filter with WHERE
+SELECT name FROM students WHERE math_score > 80;
+SELECT name FROM students WHERE department = 'Computer Science';
+SELECT name FROM students WHERE math_score > 70 AND attendance_percentage > 85;
+SELECT name FROM students WHERE department IN ('Computer Science', 'Electronics');
+SELECT name FROM students WHERE math_score BETWEEN 70 AND 90;
 
-### Unstructured Data
-- No predefined format or structure
-- Cannot be stored directly in a spreadsheet without losing information
-- Examples: photos, lecture videos, voice notes, PDFs, handwritten notes
-- Formats: JPG, MP4, MP3, PDF, TXT
+-- Sort and limit
+SELECT name, math_score FROM students ORDER BY math_score DESC LIMIT 5;
+SELECT DISTINCT department FROM students;      -- unique values
 
-**Key Fact:** 80% of all data created in the world is unstructured.
+-- Aggregate functions
+SELECT COUNT(*)                 FROM students;             -- total rows
+SELECT AVG(math_score)          FROM students;             -- average
+SELECT SUM(attendance_percentage) FROM students;           -- sum
+SELECT MIN(math_score)          FROM students;             -- minimum
+SELECT MAX(math_score)          FROM students;             -- maximum
+SELECT ROUND(AVG(math_score),2) FROM students;             -- rounded avg
 
----
+-- GROUP BY
+SELECT department, COUNT(*) AS num_students
+FROM students GROUP BY department;
 
-## GitHub Key Concepts
+SELECT department, ROUND(AVG(math_score),2) AS avg_math
+FROM students GROUP BY department ORDER BY avg_math DESC;
 
-| Term | Meaning | Analogy |
-|------|---------|---------|
-| Repository (Repo) | Project folder on GitHub | Google Drive folder for your project |
-| Commit | Saved snapshot with a message | Ctrl+S in Google Docs with a label |
-| Push | Send local code to GitHub | Upload to Google Drive |
-| Pull | Download code from GitHub | Download from Google Drive |
-| README.md | Project description file | Cover page of your project report |
-| Branch | Separate version of code | Making a copy to experiment on |
+-- HAVING (filter groups)
+SELECT department, AVG(math_score) AS avg_math
+FROM students GROUP BY department HAVING AVG(math_score) > 70;
 
-### GitHub Setup Steps
-1. Go to github.com
-2. Sign Up → enter email, username, password
-3. Verify email
-4. Click '+' → 'New repository'
-5. Name: `codeboosters-internship-2024`
-6. Set to **Public**
-7. Check 'Add a README file'
-8. Click 'Create repository'
+-- Calculated column
+SELECT name, math_score + science_score + english_score + programming_score AS total_score
+FROM students ORDER BY total_score DESC;
 
-### Uploading Notebook to GitHub
-1. Go to your repository
-2. Click 'Add file' → 'Upload files'
-3. Drag and drop your `.ipynb` file
-4. Write a commit message: `Add Day 1 notebook`
-5. Click 'Commit changes'
+-- INNER JOIN
+SELECT s.name, s.math_score, d.hod_name
+FROM students AS s
+INNER JOIN departments AS d ON s.dept_code = d.dept_code;
+```
+
+**SQL Execution Order:** `FROM → WHERE → GROUP BY → HAVING → SELECT → ORDER BY → LIMIT`
 
 ---
 
-## Common Errors and Fixes
+## WHERE vs HAVING
 
-| Error | Fix |
-|-------|-----|
-| `ModuleNotFoundError: No module named 'pandas'` | Run `!pip install pandas` |
-| `FileNotFoundError: student_performance.csv` | Upload file via Colab Files panel |
-| `KeyError: 'column_name'` | Check `df.columns` for exact spelling |
-| `SyntaxError` | Check for missing brackets, quotes, colons |
-| `IndentationError` | Use exactly 4 spaces. Never mix tabs and spaces |
-
----
-
-## Dataset Reference — student_performance.csv
-
-| Column | Type | Description |
-|--------|------|-------------|
-| student_id | int | Unique student number |
-| name | text | Student's full name |
-| age | int | Age in years |
-| gender | text | Male or Female |
-| department | text | Engineering department |
-| semester | int | Current semester |
-| math_score | int | Math marks (0-100) |
-| science_score | int | Science marks (0-100) |
-| english_score | int | English marks (0-100) |
-| programming_score | int | Programming marks (0-100) |
-| attendance_percentage | int | Attendance % (0-100) |
-| city | text | Home city |
-| admission_year | int | Year of admission |
-
-**This dataset will be used across all 10 days of the internship.**
+| | WHERE | HAVING |
+|--|-------|--------|
+| **Filters** | Individual rows | Groups |
+| **When applied** | Before GROUP BY | After GROUP BY |
+| **Can use aggregates?** | No | Yes |
+| **Example** | `WHERE math_score > 80` | `HAVING AVG(math_score) > 80` |
 
 ---
 
-## Practice Questions — Day 1
+## Matplotlib Chart Templates
 
-1. A hospital stores patient X-ray images, doctor's notes, and a table of patient vital signs. Classify each data type.
+```python
+import matplotlib.pyplot as plt
 
-2. Why do companies need Data Engineers? Give a real-world example.
+# ── Template (works for all chart types) ──
+fig, ax = plt.subplots(figsize=(10, 6))   # width x height in inches
+# ... draw chart here ...
+ax.set_title('Title Here', fontsize=16, fontweight='bold')
+ax.set_xlabel('X Label', fontsize=13)
+ax.set_ylabel('Y Label', fontsize=13)
+plt.tight_layout()
+plt.show()
 
-3. Write Python code to load `sales.csv` and show its first 10 rows.
+# ── Bar Chart ──
+ax.bar(x_categories, y_values, color='#4FC3F7', edgecolor='white')
 
-4. What does `df.shape` return? If it returns `(500, 15)`, what does each number mean?
+# ── Histogram ──
+ax.hist(data_list, bins=10, color='#4FC3F7', edgecolor='white')
+ax.axvline(x=mean_val, color='red', linestyle='--', label='Mean')
+ax.legend()
 
-5. How do you filter a DataFrame called `orders` to show only rows where `city` is `Mumbai`?
+# ── Horizontal Bar ──
+ax.barh(y_labels, x_values, color='#4FC3F7')
+ax.invert_yaxis()                          # highest value at top
 
-6. You accidentally delete your Python script. How would GitHub have saved you?
+# ── Pie Chart ──
+ax.pie(sizes, labels=labels, autopct='%1.1f%%', startangle=90,
+       wedgeprops={'edgecolor':'white', 'linewidth':2})
+
+# ── 4-Panel Dashboard ──
+fig, axes = plt.subplots(2, 2, figsize=(18, 13))
+fig.suptitle('Dashboard Title', fontsize=20, fontweight='bold')
+ax1 = axes[0][0]   # top-left
+ax2 = axes[0][1]   # top-right
+ax3 = axes[1][0]   # bottom-left
+ax4 = axes[1][1]   # bottom-right
+```
 
 ---
 
-## Day 1 Completion Checklist
+## pd.read_sql_query — The Bridge
 
-- [ ] I can explain what a Data Engineer does
-- [ ] I can classify Structured, Semi-Structured, and Unstructured data
-- [ ] I have loaded `student_performance.csv` in Google Colab
-- [ ] All notebook cells run without errors
-- [ ] I have created a GitHub account
-- [ ] I have created a repository named `codeboosters-internship-2024`
-- [ ] I have uploaded my Day 1 notebook to GitHub
-- [ ] I have updated my README.md
+```python
+# SQL → DataFrame in one line
+result_df = pd.read_sql_query("""
+    SELECT department, ROUND(AVG(math_score), 2) AS avg_math
+    FROM students
+    GROUP BY department
+    ORDER BY avg_math DESC
+""", conn)
 
----
-
-## What's Coming on Day 2
-
-On Day 2, we take the **same student dataset** and:
-- Store it in a real **database** using SQLite
-- Write **SQL queries** to find insights
-- Create **charts and visualizations** using Matplotlib
-- Build a **Student Performance Dashboard**
+# Now use result_df like any other DataFrame
+print(result_df)
+ax.bar(result_df['department'], result_df['avg_math'])
+```
 
 ---
 
-*Codeboosters Tech | Data Engineering + GenAI Internship | Day 1 of 10*
+## Common Errors — Day 2
+
+| Error | Cause | Fix |
+|-------|--------|-----|
+| `no such table: students` | DB setup cell not run | Run the `df.to_sql()` cell first |
+| `no such column: name` | Column name typo | Run `PRAGMA table_info(students)` |
+| `ProgrammingError: closed connection` | conn was closed | Re-run `conn = sqlite3.connect('college.db')` |
+| Chart appears blank | DataFrame is empty | `print(result_df)` before charting |
+| Labels cut off | `tight_layout()` missing | Add `plt.tight_layout()` before `plt.show()` |
+
+---
+
+## Practice Questions
+
+1. What is the difference between a Primary Key and a Foreign Key?
+2. Write SQL to find the average programming score for female students only.
+3. What is the difference between WHERE and HAVING? Give one example of each.
+4. Write SQL to find departments where average attendance is above 85%.
+5. What does `pd.read_sql_query()` return and what arguments does it need?
+6. You want to show how math scores are distributed. Which chart type is best and why?
+
+---
+
+## Day 2 Completion Checklist
+
+- [ ] `college.db` created from `student_performance.csv`
+- [ ] All 8 SQL queries run without errors
+- [ ] 4 charts created (bar, histogram, grouped bar, pie)
+- [ ] Student Performance Dashboard (2×2 grid) complete
+- [ ] Notebook saved as `Day_02_Database_SQL_Visualization.ipynb`
+- [ ] Notebook uploaded to GitHub
+- [ ] Commit message: `Add Day 2: SQL Database + Visualization Dashboard`
+
+---
+
+## Day 3 Preview
+**ETL Pipelines + Pandas Data Cleaning + Weather API**
+- Call a real API and collect live weather data
+- Clean messy data (nulls, duplicates, wrong types)
+- Build a complete ETL pipeline
+- The student dataset continues!
+
+---
+*Codeboosters Tech | Data Engineering + GenAI Internship | Day 2 of 10*
